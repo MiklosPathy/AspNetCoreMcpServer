@@ -10,15 +10,19 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
 
-// Note: This sample uses SampleLlmTool which calls server.AsSamplingChatClient() to send
-// a server-to-client sampling request. This requires stateful (session-based) mode. Set
-// Stateless = false explicitly for forward compatibility in case the default changes.
-// See https://csharp.sdk.modelcontextprotocol.io/concepts/sessions/sessions.html for details.
 builder.Services.AddMcpServer()
     .WithHttpTransport(o => { o.Stateless = true; })
     .WithTools<DateTimeTool>()
     .WithTools<WebSearchTool>()
     .WithTools<FetchUrlTool>()
+    .WithTools<FileSystemTool>()
+    .WithTools<ShellTool>()
+    .WithTools<GitTool>()
+    .WithTools<DirectoryTreeTool>()
+    .WithTools<FileSearchTool>()
+    .WithTools<ProcessListTool>()
+    .WithTools<EnvironmentTool>()
+    .WithTools<ExpressionEvaluatorTool>()
     .WithResources<SimpleResourceType>();
 
 builder.Services.AddHttpClient("DuckDuckGo", client =>
