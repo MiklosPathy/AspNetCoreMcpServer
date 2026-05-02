@@ -7,36 +7,19 @@ namespace AspNetCoreMcpServer.Tools;
 [McpServerToolType]
 public class FileSystemTool
 {
-    private readonly string _basePath;
-
-    public FileSystemTool()
+    private static string ResolvePath(string path)
     {
-        _basePath = FindSolutionRoot();
-    }
+        // If the path is already absolute, use it as-is
+        if (Path.IsPathRooted(path))
+            return Path.GetFullPath(path);
 
-    private static string FindSolutionRoot()
-    {
-        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (dir != null)
-        {
-            if (dir.EnumerateFiles("*.slnx").Any() || dir.EnumerateFiles("*.sln").Any())
-                return dir.FullName;
-            dir = dir.Parent;
-        }
-        return Directory.GetCurrentDirectory();
-    }
-
-    private string ResolvePath(string path)
-    {
-        var full = Path.GetFullPath(Path.Combine(_basePath, path));
-        if (!full.StartsWith(_basePath, StringComparison.OrdinalIgnoreCase))
-            throw new McpException($"Path traversal denied: {path}");
-        return full;
+        // For relative paths, resolve from the current working directory
+        return Path.GetFullPath(path);
     }
 
     [McpServerTool(Name = "file_read"), Description("Read the contents of a text file.")]
     public string FileRead(
-        [Description("Relative or absolute file path from solution root")] string path)
+        [Description("Relative or absolute file path")] string path)
     {
         var full = ResolvePath(path);
         if (!File.Exists(full))
@@ -63,7 +46,7 @@ public class FileSystemTool
             throw new McpException($"Directory not found: {path}");
 
         return Directory.GetFileSystemEntries(full)
-            .Select(f => Path.GetRelativePath(_basePath, f))
+            .Select(f => Path.GetFileName(f))
             .ToArray();
     }
 

@@ -8,36 +8,19 @@ namespace AspNetCoreMcpServer.Tools;
 [McpServerToolType]
 public class DirectoryTreeTool
 {
-    private readonly string _basePath;
-
-    public DirectoryTreeTool()
+    private static string ResolvePath(string path)
     {
-        _basePath = FindSolutionRoot();
-    }
+        // If the path is already absolute, use it as-is
+        if (Path.IsPathRooted(path))
+            return Path.GetFullPath(path);
 
-    private static string FindSolutionRoot()
-    {
-        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (dir != null)
-        {
-            if (dir.EnumerateFiles("*.slnx").Any() || dir.EnumerateFiles("*.sln").Any())
-                return dir.FullName;
-            dir = dir.Parent;
-        }
-        return Directory.GetCurrentDirectory();
-    }
-
-    private string ResolvePath(string path)
-    {
-        var full = Path.GetFullPath(Path.Combine(_basePath, path));
-        if (!full.StartsWith(_basePath, StringComparison.OrdinalIgnoreCase))
-            throw new McpException($"Path traversal denied: {path}");
-        return full;
+        // For relative paths, resolve from the current working directory
+        return Path.GetFullPath(path);
     }
 
     [McpServerTool(Name = "get_directory_tree"), Description("Get recursive directory tree as formatted text.")]
     public string GetTree(
-        [Description("Directory path relative to solution root")] string path,
+        [Description("Directory path (relative or absolute)")] string path,
         [Description("Max depth (default: 3)")] int maxDepth = 3,
         [Description("Exclude patterns (e.g. bin,obj,.git)")] string[]? exclude = null)
     {

@@ -7,36 +7,19 @@ namespace AspNetCoreMcpServer.Tools;
 [McpServerToolType]
 public class FileSearchTool
 {
-    private readonly string _basePath;
-
-    public FileSearchTool()
+    private static string ResolvePath(string path)
     {
-        _basePath = FindSolutionRoot();
-    }
+        // If the path is already absolute, use it as-is
+        if (Path.IsPathRooted(path))
+            return Path.GetFullPath(path);
 
-    private static string FindSolutionRoot()
-    {
-        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (dir != null)
-        {
-            if (dir.EnumerateFiles("*.slnx").Any() || dir.EnumerateFiles("*.sln").Any())
-                return dir.FullName;
-            dir = dir.Parent;
-        }
-        return Directory.GetCurrentDirectory();
-    }
-
-    private string ResolvePath(string path)
-    {
-        var full = Path.GetFullPath(Path.Combine(_basePath, path));
-        if (!full.StartsWith(_basePath, StringComparison.OrdinalIgnoreCase))
-            throw new McpException($"Path traversal denied: {path}");
-        return full;
+        // For relative paths, resolve from the current working directory
+        return Path.GetFullPath(path);
     }
 
     [McpServerTool(Name = "search_files"), Description("Search files by name pattern.")]
     public string[] SearchFiles(
-        [Description("Directory to search in (relative to solution root)")] string directory,
+        [Description("Directory to search in (relative or absolute path)")] string directory,
         [Description("Search pattern, e.g. *.cs, Program*.cs")] string pattern,
         [Description("Search subdirectories (default: true)")] bool recursive = true)
     {
@@ -45,8 +28,6 @@ public class FileSearchTool
             throw new McpException($"Directory not found: {directory}");
 
         var option = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-        return Directory.GetFiles(full, pattern, option)
-            .Select(f => Path.GetRelativePath(_basePath, f))
-            .ToArray();
+        return Directory.GetFiles(full, pattern, option);
     }
 }
