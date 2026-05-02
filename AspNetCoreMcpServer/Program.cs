@@ -34,15 +34,30 @@ builder.Services.AddHttpClient("DuckDuckGo", client =>
 
 builder.Services.AddHttpClient("FetchUrl", client =>
 {
+    // Realistic Chrome User-Agent to avoid bot detection
     client.DefaultRequestHeaders.UserAgent.ParseAdd(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
-    client.DefaultRequestHeaders.AcceptLanguage.Add(new StringWithQualityHeaderValue("en-US"));
-    client.Timeout = TimeSpan.FromSeconds(15);
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
+    client.DefaultRequestHeaders.AcceptLanguage.Add(new StringWithQualityHeaderValue("en-US", 0.9));
+    client.DefaultRequestHeaders.AcceptLanguage.Add(new StringWithQualityHeaderValue("hu", 0.8));
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html", 1.0));
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xhtml+xml", 0.9));
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml", 0.8));
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*", 0.5));
+    client.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br");
+    client.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "document");
+    client.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "navigate");
+    client.DefaultRequestHeaders.Add("Sec-Fetch-Site", "none");
+    client.DefaultRequestHeaders.Add("Sec-Fetch-User", "?1");
+    client.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
+    client.Timeout = TimeSpan.FromSeconds(30);
 })
 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
 {
     AllowAutoRedirect = true,
-    MaxAutomaticRedirections = 10,
+    MaxAutomaticRedirections = 15,
+    AutomaticDecompression = System.Net.DecompressionMethods.All,
+    UseCookies = true,
+    CookieContainer = new System.Net.CookieContainer(),
 });
 
 var app = builder.Build();
